@@ -1,26 +1,57 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Link, useParams } from 'react-router-dom';
-
-const dummySupplier = { id: 1, name: 'Tech Supplier', phone: '08123456789', address: 'Jakarta' };
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import api from '@/services/api';
 
 export default function Edit() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [data, setData] = useState({
-        name: dummySupplier.name,
-        phone: dummySupplier.phone ?? '',
-        address: dummySupplier.address ?? '',
+        name: '',
+        phone: '',
+        address: '',
     });
+    const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
 
-    const handleSubmit = (e) => {
+    useEffect(() => {
+        const loadSupplier = async () => {
+            try {
+                const response = await api.get(`/suppliers/${id}`);
+                const supplier = response.data.data;
+                setData({
+                    name: supplier.name,
+                    phone: supplier.phone || '',
+                    address: supplier.address || '',
+                });
+            } catch (error) {
+                console.error('Failed to load supplier:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadSupplier();
+    }, [id]);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setProcessing(true);
-        setTimeout(() => {
+        setErrors({});
+
+        try {
+            await api.put(`/suppliers/${id}`, data);
+            navigate('/suppliers');
+        } catch (error) {
+            if (error.response?.data?.errors) {
+                setErrors(error.response.data.errors);
+            } else {
+                alert(error.response?.data?.message || 'Gagal memperbarui supplier');
+            }
+        } finally {
             setProcessing(false);
-            window.location.href = '/suppliers';
-        }, 1000);
+        }
     };
 
     return (
@@ -54,99 +85,109 @@ export default function Edit() {
                         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                         border: '1px solid #e2e8f0',
                     }}>
-                        <div style={{ marginBottom: '32px' }}>
-                            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b' }}>Edit Informasi Supplier</h2>
-                            <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Perbarui detail supplier di bawah ini.</p>
-                        </div>
+                        {loading ? (
+                            <div style={{ textAlign: 'center', padding: '40px' }}>Memuat...</div>
+                        ) : (
+                            <>
+                                <div style={{ marginBottom: '32px' }}>
+                                    <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b' }}>Edit Informasi Supplier</h2>
+                                    <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Perbarui detail supplier di bawah ini.</p>
+                                </div>
 
-                        <form onSubmit={handleSubmit}>
-                            <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Nama Supplier <span style={{ color: '#ef4444' }}>*</span></label>
-                                <input 
-                                    type="text" 
-                                    value={data.name} 
-                                    onChange={e => setData(prev => ({ ...prev, name: e.target.value }))}
-                                    placeholder="E.g. PT Maju Jaya" 
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px 16px',
-                                        borderRadius: '10px',
-                                        border: '1px solid #e2e8f0',
-                                        backgroundColor: '#f8fafc',
-                                        fontSize: '15px',
-                                        outline: 'none',
-                                        transition: 'border-color 0.2s, box-shadow 0.2s',
-                                    }}
-                                    onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.1)'; }}
-                                    onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
-                                />
-                                {errors.name && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.name}</p>}
-                            </div>
+                                <form onSubmit={handleSubmit}>
+                                    <div style={{ marginBottom: '24px' }}>
+                                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Nama Supplier <span style={{ color: '#ef4444' }}>*</span></label>
+                                        <input
+                                            type="text"
+                                            value={data.name}
+                                            onChange={e => setData(prev => ({ ...prev, name: e.target.value }))}
+                                            placeholder="E.g. PT Maju Jaya"
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px 16px',
+                                                borderRadius: '10px',
+                                                border: '1px solid #e2e8f0',
+                                                backgroundColor: '#f8fafc',
+                                                fontSize: '15px',
+                                                outline: 'none',
+                                                boxSizing: 'border-box',
+                                                transition: 'border-color 0.2s, box-shadow 0.2s',
+                                            }}
+                                            onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.1)'; }}
+                                            onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                                            required
+                                        />
+                                        {errors.name && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.name}</p>}
+                                    </div>
 
-                            <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>No. Telepon</label>
-                                <input 
-                                    type="text" 
-                                    value={data.phone} 
-                                    onChange={e => setData(prev => ({ ...prev, phone: e.target.value }))}
-                                    placeholder="E.g. 08123456789" 
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px 16px',
-                                        borderRadius: '10px',
-                                        border: '1px solid #e2e8f0',
-                                        backgroundColor: '#f8fafc',
-                                        fontSize: '15px',
-                                        outline: 'none',
-                                    }}
-                                />
-                                {errors.phone && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.phone}</p>}
-                            </div>
+                                    <div style={{ marginBottom: '24px' }}>
+                                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>No. Telepon</label>
+                                        <input
+                                            type="text"
+                                            value={data.phone}
+                                            onChange={e => setData(prev => ({ ...prev, phone: e.target.value }))}
+                                            placeholder="E.g. 08123456789"
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px 16px',
+                                                borderRadius: '10px',
+                                                border: '1px solid #e2e8f0',
+                                                backgroundColor: '#f8fafc',
+                                                fontSize: '15px',
+                                                outline: 'none',
+                                                boxSizing: 'border-box',
+                                            }}
+                                        />
+                                        {errors.phone && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.phone}</p>}
+                                    </div>
 
-                            <div style={{ marginBottom: '32px' }}>
-                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Alamat</label>
-                                <textarea 
-                                    value={data.address} 
-                                    onChange={e => setData(prev => ({ ...prev, address: e.target.value }))}
-                                    rows="3"
-                                    placeholder="Alamat lengkap supplier..."
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px 16px',
-                                        borderRadius: '10px',
-                                        border: '1px solid #e2e8f0',
-                                        backgroundColor: '#f8fafc',
-                                        fontSize: '15px',
-                                        outline: 'none',
-                                        resize: 'vertical',
-                                    }}
-                                ></textarea>
-                                {errors.address && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.address}</p>}
-                            </div>
+                                    <div style={{ marginBottom: '32px' }}>
+                                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Alamat</label>
+                                        <textarea
+                                            value={data.address}
+                                            onChange={e => setData(prev => ({ ...prev, address: e.target.value }))}
+                                            rows="3"
+                                            placeholder="Alamat lengkap supplier..."
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px 16px',
+                                                borderRadius: '10px',
+                                                border: '1px solid #e2e8f0',
+                                                backgroundColor: '#f8fafc',
+                                                fontSize: '15px',
+                                                outline: 'none',
+                                                resize: 'vertical',
+                                                boxSizing: 'border-box',
+                                            }}
+                                        ></textarea>
+                                        {errors.address && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.address}</p>}
+                                    </div>
 
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                style={{
-                                    width: '100%',
-                                    padding: '14px',
-                                    borderRadius: '12px',
-                                    backgroundColor: '#0ea5e9',
-                                    color: 'white',
-                                    fontSize: '16px',
-                                    fontWeight: '700',
-                                    border: 'none',
-                                    cursor: processing ? 'not-allowed' : 'pointer',
-                                    opacity: processing ? 0.7 : 1,
-                                    boxShadow: '0 10px 15px -3px rgba(14, 165, 233, 0.3)',
-                                    transition: 'all 0.2s',
-                                }}
-                                onMouseEnter={e => { if(!processing) e.target.style.backgroundColor = '#0284c7'; }}
-                                onMouseLeave={e => { if(!processing) e.target.style.backgroundColor = '#0ea5e9'; }}
-                            >
-                                {processing ? 'Menyimpan...' : 'Perbarui Supplier'}
-                            </button>
-                        </form>
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        style={{
+                                            width: '100%',
+                                            padding: '14px',
+                                            borderRadius: '12px',
+                                            backgroundColor: '#0ea5e9',
+                                            color: 'white',
+                                            fontSize: '16px',
+                                            fontWeight: '700',
+                                            border: 'none',
+                                            cursor: processing ? 'not-allowed' : 'pointer',
+                                            opacity: processing ? 0.7 : 1,
+                                            boxShadow: '0 10px 15px -3px rgba(14, 165, 233, 0.3)',
+                                            transition: 'all 0.2s',
+                                        }}
+                                        onMouseEnter={e => { if (!processing) e.target.style.backgroundColor = '#0284c7'; }}
+                                        onMouseLeave={e => { if (!processing) e.target.style.backgroundColor = '#0ea5e9'; }}
+                                    >
+                                        {processing ? 'Menyimpan...' : 'Perbarui Supplier'}
+                                    </button>
+                                </form>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

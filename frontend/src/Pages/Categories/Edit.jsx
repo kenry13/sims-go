@@ -1,28 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Link, useParams } from 'react-router-dom';
-
-// Dummy category data
-const dummyCategory = { id: 1, name: 'Elektronik', description: 'Barang elektronik seperti laptop, hp, dll.' };
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import api from '@/services/api';
 
 export default function Edit() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [data, setData] = useState({
-        name: dummyCategory.name,
-        description: dummyCategory.description,
+        name: '',
+        description: '',
     });
+    const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
 
-    const handleSubmit = (e) => {
+    useEffect(() => {
+        const loadCategory = async () => {
+            try {
+                const response = await api.get(`/categories/${id}`);
+                const category = response.data.data;
+                setData({
+                    name: category.name,
+                    description: category.description || '',
+                });
+            } catch (error) {
+                console.error('Failed to load category:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadCategory();
+    }, [id]);
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setProcessing(true);
-        // TODO: Connect to API later
-        setTimeout(() => {
+        setErrors({});
+        
+        try {
+            await api.put(`/categories/${id}`, data);
+            navigate('/categories');
+        } catch (error) {
+            if (error.response) {
+                setErrors(error.response.data.errors || {});
+            }
+        } finally {
             setProcessing(false);
-            // Redirect to index
-            window.location.href = '/categories';
-        }, 1000);
+        }
     };
 
     return (
@@ -57,81 +82,87 @@ export default function Edit() {
                         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                         border: '1px solid #e2e8f0',
                     }}>
-                        <div style={{ marginBottom: '32px' }}>
-                            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b' }}>Edit Informasi Kategori</h2>
-                            <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Perbarui detail kategori di bawah ini.</p>
-                        </div>
+                        {loading ? (
+                            <div style={{ textAlign: 'center', padding: '40px' }}>Memuat...</div>
+                        ) : (
+                            <>
+                                <div style={{ marginBottom: '32px' }}>
+                                    <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b' }}>Edit Informasi Kategori</h2>
+                                    <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>Perbarui detail kategori di bawah ini.</p>
+                                </div>
 
-                        <form onSubmit={handleSubmit}>
-                            {/* Nama Kategori */}
-                            <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Nama Kategori <span style={{ color: '#ef4444' }}>*</span></label>
-                                <input 
-                                    type="text" 
-                                    value={data.name} 
-                                    onChange={e => setData(prev => ({ ...prev, name: e.target.value }))}
-                                    placeholder="E.g. Elektronik" 
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px 16px',
-                                        borderRadius: '10px',
-                                        border: '1px solid #e2e8f0',
-                                        backgroundColor: '#f8fafc',
-                                        fontSize: '15px',
-                                        outline: 'none',
-                                        transition: 'border-color 0.2s, box-shadow 0.2s',
-                                    }}
-                                    onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.1)'; }}
-                                    onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
-                                />
-                                {errors.name && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.name}</p>}
-                            </div>
+                                <form onSubmit={handleSubmit}>
+                                    {/* Nama Kategori */}
+                                    <div style={{ marginBottom: '24px' }}>
+                                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Nama Kategori <span style={{ color: '#ef4444' }}>*</span></label>
+                                        <input 
+                                            type="text" 
+                                            value={data.name} 
+                                            onChange={e => setData(prev => ({ ...prev, name: e.target.value }))}
+                                            placeholder="E.g. Elektronik" 
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px 16px',
+                                                borderRadius: '10px',
+                                                border: '1px solid #e2e8f0',
+                                                backgroundColor: '#f8fafc',
+                                                fontSize: '15px',
+                                                outline: 'none',
+                                                transition: 'border-color 0.2s, box-shadow 0.2s',
+                                            }}
+                                            onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.1)'; }}
+                                            onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                                        />
+                                        {errors.name && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.name}</p>}
+                                    </div>
 
-                            {/* Deskripsi */}
-                            <div style={{ marginBottom: '32px' }}>
-                                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Deskripsi</label>
-                                <textarea 
-                                    value={data.description} 
-                                    onChange={e => setData(prev => ({ ...prev, description: e.target.value }))}
-                                    rows="4"
-                                    placeholder="Opsional..."
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px 16px',
-                                        borderRadius: '10px',
-                                        border: '1px solid #e2e8f0',
-                                        backgroundColor: '#f8fafc',
-                                        fontSize: '15px',
-                                        outline: 'none',
-                                        resize: 'vertical',
-                                    }}
-                                ></textarea>
-                                {errors.description && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.description}</p>}
-                            </div>
+                                    {/* Deskripsi */}
+                                    <div style={{ marginBottom: '32px' }}>
+                                        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Deskripsi</label>
+                                        <textarea 
+                                            value={data.description} 
+                                            onChange={e => setData(prev => ({ ...prev, description: e.target.value }))}
+                                            rows="4"
+                                            placeholder="Opsional..."
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px 16px',
+                                                borderRadius: '10px',
+                                                border: '1px solid #e2e8f0',
+                                                backgroundColor: '#f8fafc',
+                                                fontSize: '15px',
+                                                outline: 'none',
+                                                resize: 'vertical',
+                                            }}
+                                        ></textarea>
+                                        {errors.description && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.description}</p>}
+                                    </div>
 
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                style={{
-                                    width: '100%',
-                                    padding: '14px',
-                                    borderRadius: '12px',
-                                    backgroundColor: '#0ea5e9',
-                                    color: 'white',
-                                    fontSize: '16px',
-                                    fontWeight: '700',
-                                    border: 'none',
-                                    cursor: processing ? 'not-allowed' : 'pointer',
-                                    opacity: processing ? 0.7 : 1,
-                                    boxShadow: '0 10px 15px -3px rgba(14, 165, 233, 0.3)',
-                                    transition: 'all 0.2s',
-                                }}
-                                onMouseEnter={e => { if(!processing) e.target.style.backgroundColor = '#0284c7'; }}
-                                onMouseLeave={e => { if(!processing) e.target.style.backgroundColor = '#0ea5e9'; }}
-                            >
-                                {processing ? 'Menyimpan...' : 'Perbarui Kategori'}
-                            </button>
-                        </form>
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        style={{
+                                            width: '100%',
+                                            padding: '14px',
+                                            borderRadius: '12px',
+                                            backgroundColor: '#0ea5e9',
+                                            color: 'white',
+                                            fontSize: '16px',
+                                            fontWeight: '700',
+                                            border: 'none',
+                                            cursor: processing ? 'not-allowed' : 'pointer',
+                                            opacity: processing ? 0.7 : 1,
+                                            boxShadow: '0 10px 15px -3px rgba(14, 165, 233, 0.3)',
+                                            transition: 'all 0.2s',
+                                        }}
+                                        onMouseEnter={e => { if(!processing) e.target.style.backgroundColor = '#0284c7'; }}
+                                        onMouseLeave={e => { if(!processing) e.target.style.backgroundColor = '#0ea5e9'; }}
+                                    >
+                                        {processing ? 'Menyimpan...' : 'Perbarui Kategori'}
+                                    </button>
+                                </form>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

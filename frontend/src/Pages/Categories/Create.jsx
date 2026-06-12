@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '@/services/api';
 
 export default function Create() {
+    const navigate = useNavigate();
     const [data, setData] = useState({
         name: '',
         description: '',
@@ -10,15 +12,21 @@ export default function Create() {
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setProcessing(true);
-        // TODO: Connect to API later
-        setTimeout(() => {
+        setErrors({});
+        
+        try {
+            await api.post('/categories', data);
+            navigate('/categories');
+        } catch (error) {
+            if (error.response) {
+                setErrors(error.response.data.errors || {});
+            }
+        } finally {
             setProcessing(false);
-            // Redirect to index
-            window.location.href = '/categories';
-        }, 1000);
+        }
     };
 
     return (

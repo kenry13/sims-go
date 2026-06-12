@@ -1,28 +1,36 @@
+import { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Link } from 'react-router-dom';
-
-// Dummy data
-const dummyAuth = { user: { name: 'Admin', role: 'admin' } };
-const dummyItems = {
-    data: [
-        { id: 1, code: 'BRG001', name: 'Laptop ASUS ROG', category: { name: 'Elektronik' }, supplier: { name: 'Tech Supplier' }, stock: 50, unit: 'pcs', min_stock: 10 },
-        { id: 2, code: 'BRG002', name: 'Mouse Logitech G502', category: { name: 'Elektronik' }, supplier: { name: 'Tech Supplier' }, stock: 5, unit: 'pcs', min_stock: 10 },
-    ],
-    total: 2,
-    from: 1,
-    last_page: 1,
-    links: [
-        { label: '&laquo; Previous', url: null, active: false },
-        { label: '1', url: '/items?page=1', active: true },
-        { label: 'Next &raquo;', url: null, active: false },
-    ]
-};
+import api from '@/services/api';
 
 export default function Index() {
-    const handleDelete = (id) => {
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const loadItems = async () => {
+        try {
+            const response = await api.get('/items');
+            setItems(response.data.data || []);
+        } catch (error) {
+            console.error('Failed to load items:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadItems();
+    }, []);
+
+    const handleDelete = async (id) => {
         if (confirm('Yakin ingin menghapus barang ini?')) {
-            // TODO: Connect to API later
-            console.log('Deleting item', id);
+            try {
+                await api.delete(`/items/${id}`);
+                setItems(items.filter(item => item.id !== id));
+            } catch (error) {
+                console.error('Failed to delete item:', error);
+                alert(error.response?.data?.message || 'Gagal menghapus barang');
+            }
         }
     };
 
@@ -30,10 +38,10 @@ export default function Index() {
         <AuthenticatedLayout header="Data Barang">
             <div style={{ padding: '24px', backgroundColor: '#f8fafc', minHeight: 'calc(100vh - 64px)' }}>
                 {/* Header Action Section */}
-                <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between', 
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     marginBottom: '24px',
                     backgroundColor: 'white',
                     padding: '20px 24px',
@@ -44,7 +52,7 @@ export default function Index() {
                     <div>
                         <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b' }}>Daftar Barang</h2>
                         <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>
-                            Total {dummyItems.total} barang terdaftar dalam sistem
+                            Total {items.length} barang terdaftar dalam sistem
                         </p>
                     </div>
                     <Link
@@ -73,10 +81,10 @@ export default function Index() {
                 </div>
 
                 {/* Table Section */}
-                <div style={{ 
-                    backgroundColor: 'white', 
-                    borderRadius: '16px', 
-                    overflow: 'hidden', 
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
                     border: '1px solid #e2e8f0',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                 }}>
@@ -97,21 +105,27 @@ export default function Index() {
                             </tr>
                         </thead>
                         <tbody style={{ color: '#1e293b' }}>
-                            {dummyItems.data.length === 0 ? (
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={8} style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
+                                        Memuat...
+                                    </td>
+                                </tr>
+                            ) : items.length === 0 ? (
                                 <tr>
                                     <td colSpan={8} style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
                                         Belum ada data barang
                                     </td>
                                 </tr>
                             ) : (
-                                dummyItems.data.map((item, i) => {
+                                items.map((item, i) => {
                                     const isLow = item.stock <= item.min_stock;
                                     return (
-                                        <tr key={item.id} style={{ borderBottom: i === dummyItems.data.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
+                                        <tr key={item.id} style={{ borderBottom: i === items.length - 1 ? 'none' : '1px solid #f1f5f9' }}>
                                             <td style={{ padding: '16px 20px', fontWeight: '600', color: '#0ea5e9' }}>{item.code}</td>
                                             <td style={{ padding: '16px 20px', fontWeight: '500' }}>{item.name}</td>
-                                            <td style={{ padding: '16px 20px' }}>{item.category?.name}</td>
-                                            <td style={{ padding: '16px 20px' }}>{item.supplier?.name}</td>
+                                            <td style={{ padding: '16px 20px' }}>{item.category?.name || '-'}</td>
+                                            <td style={{ padding: '16px 20px' }}>{item.supplier?.name || '-'}</td>
                                             <td style={{ padding: '16px 20px', fontWeight: '700' }}>{item.stock}</td>
                                             <td style={{ padding: '16px 20px' }}>{item.unit}</td>
                                             <td style={{ padding: '16px 20px', textAlign: 'center' }}>

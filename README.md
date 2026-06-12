@@ -2,10 +2,13 @@
 
 Sistem manajemen inventaris berbasis REST API yang dibangun dengan **Golang + Gin Framework**, hasil migrasi dari Laravel. Dirancang dengan arsitektur berlapis (Layered Architecture) untuk memisahkan tanggung jawab tiap komponen.
 
+Frontend dibangun dengan **Vite + React**, terhubung ke backend melalui REST API.
+
 ---
 
 ## 🛠️ Tech Stack
 
+### Backend
 | Layer | Teknologi |
 |---|---|
 | Language | Go (Golang) |
@@ -13,7 +16,17 @@ Sistem manajemen inventaris berbasis REST API yang dibangun dengan **Golang + Gi
 | ORM | GORM |
 | Database | MySQL (Laragon) |
 | Auth | JWT (JSON Web Token) |
-| Frontend *(coming soon)* | Vite + React |
+ 
+### Frontend
+| Kebutuhan | Library |
+|---|---|
+| Build Tool | Vite 8 |
+| UI Library | React 19 + React DOM |
+| Routing | React Router DOM 7 |
+| HTTP Client | Axios |
+| Styling | Tailwind CSS 4 |
+| UI Headless | Headless UI (React) |
+| Chart | Recharts |
 
 ---
 
@@ -35,7 +48,68 @@ SIMS/
 │   ├── main.go             # Entry point
 │   ├── go.mod
 │   └── .env.example
-└── frontend/               # Coming soon (Vite + React)
+│
+└── frontend/
+    ├── public/
+    └── src/
+        ├── assets/             # Gambar & aset statis
+        ├── Components/         # Reusable UI components
+        │   ├── ApplicationLogo.jsx
+        │   ├── Checkbox.jsx
+        │   ├── DangerButton.jsx
+        │   ├── Dropdown.jsx
+        │   ├── InputError.jsx
+        │   ├── InputLabel.jsx
+        │   ├── Modal.jsx
+        │   ├── NavLink.jsx
+        │   ├── PrimaryButton.jsx
+        │   ├── ResponsiveNavLink.jsx
+        │   ├── SecondaryButton.jsx
+        │   └── TextInput.jsx
+        ├── Layouts/            # Layout wrapper
+        │   ├── AuthenticatedLayout.jsx
+        │   └── GuestLayout.jsx
+        ├── Pages/              # Halaman utama aplikasi
+        │   ├── Dashboard.jsx
+        │   ├── Welcome.jsx
+        │   ├── Auth/
+        │   │   ├── Login.jsx
+        │   │   ├── Register.jsx
+        │   │   ├── ConfirmPassword.jsx
+        │   │   ├── ForgotPassword.jsx
+        │   │   ├── ResetPassword.jsx
+        │   │   └── VerifyEmail.jsx
+        │   ├── Categories/
+        │   │   ├── Index.jsx
+        │   │   ├── Create.jsx
+        │   │   └── Edit.jsx
+        │   ├── Items/
+        │   │   ├── Index.jsx
+        │   │   ├── Create.jsx
+        │   │   └── Edit.jsx
+        │   ├── Suppliers/
+        │   │   ├── Index.jsx
+        │   │   ├── Create.jsx
+        │   │   └── Edit.jsx
+        │   ├── StockIns/
+        │   │   ├── Index.jsx
+        │   │   └── Create.jsx
+        │   ├── StockOuts/
+        │   │   ├── Index.jsx
+        │   │   └── Create.jsx
+        │   ├── Reports/
+        │   │   └── Index.jsx
+        │   └── Profile/
+        │       ├── Edit.jsx
+        │       └── Partials/
+        │           ├── DeleteUserForm.jsx
+        │           ├── UpdatePasswordForm.jsx
+        │           └── UpdateProfileInformationForm.jsx
+        ├── services/
+        │   └── api.js          # Axios instance & API calls ke backend
+        ├── App.jsx
+        ├── App.css
+        └── main.jsx
 ```
 
 ---
@@ -44,23 +118,28 @@ SIMS/
 
 ### Prasyarat
 - Go 1.21+
+- Node.js 18+
 - MySQL (Laragon / XAMPP)
 - Git
 
-### 1. Clone repository
+---
+
+### 🔧 Backend
+
+#### 1. Clone repository
 
 ```bash
 git clone https://github.com/kenry13/sims-go.git
 cd SIMS/backend
 ```
 
-### 2. Install dependencies
+#### 2. Install dependencies
 
 ```bash
 go mod tidy
 ```
 
-### 3. Setup environment
+#### 3. Setup environment
 
 Salin file `.env.example` menjadi `.env`:
 
@@ -82,7 +161,7 @@ DB_NAME=sims_db
 JWT_SECRET=your-secret-key
 ```
 
-### 4. Buat database
+#### 4. Buat database
 
 Buat database `sims_db` di MySQL, lalu import file SQL:
 
@@ -90,13 +169,39 @@ Buat database `sims_db` di MySQL, lalu import file SQL:
 mysql -u root sims_db < sims_db.sql
 ```
 
-### 5. Jalankan server
+#### 5. Jalankan server
 
 ```bash
 go run main.go
 ```
 
 Server berjalan di `http://localhost:8000`
+
+---
+
+### 🎨 Frontend
+
+#### 1. Masuk ke direktori frontend
+
+```bash
+cd SIMS/frontend
+```
+
+#### 2. Install dependencies
+
+```bash
+npm install
+```
+
+#### 3. Jalankan development server
+
+```bash
+npm run dev
+```
+
+Frontend berjalan di `http://localhost:5173`
+
+> Pastikan backend sudah berjalan sebelum menjalankan frontend.
 
 ---
 
@@ -107,6 +212,8 @@ API ini menggunakan **JWT Bearer Token**. Login terlebih dahulu untuk mendapatka
 ```
 Authorization: Bearer <token>
 ```
+
+Token disimpan di sisi frontend dan disertakan otomatis oleh `api.js` pada setiap request.
 
 ---
 
@@ -175,31 +282,6 @@ Authorization: Bearer <token>
 > 🔒 = Membutuhkan token JWT
 
 ---
-
-## 📬 Contoh Request
-
-### Login
-```json
-POST /api/auth/login
-{
-  "email": "admin@sims.com",
-  "password": "password"
-}
-```
-
-### Tambah Item
-```json
-POST /api/items
-{
-  "code": "ELK-003",
-  "name": "Keyboard Wireless",
-  "category_id": 1,
-  "supplier_id": 1,
-  "stock": 10,
-  "min_stock": 3,
-  "unit": "unit"
-}
-```
 
 ### Catat Stok Masuk
 ```json

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '@/services/api';
 
 export default function Create() {
+    const navigate = useNavigate();
     const [data, setData] = useState({
         name: '',
         phone: '',
@@ -11,13 +13,23 @@ export default function Create() {
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setProcessing(true);
-        setTimeout(() => {
+        setErrors({});
+
+        try {
+            await api.post('/suppliers', data);
+            navigate('/suppliers');
+        } catch (error) {
+            if (error.response?.data?.errors) {
+                setErrors(error.response.data.errors);
+            } else {
+                alert(error.response?.data?.message || 'Gagal menyimpan supplier');
+            }
+        } finally {
             setProcessing(false);
-            window.location.href = '/suppliers';
-        }, 1000);
+        }
     };
 
     return (
@@ -59,11 +71,11 @@ export default function Create() {
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: '24px' }}>
                                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Nama Supplier <span style={{ color: '#ef4444' }}>*</span></label>
-                                <input 
-                                    type="text" 
-                                    value={data.name} 
+                                <input
+                                    type="text"
+                                    value={data.name}
                                     onChange={e => setData(prev => ({ ...prev, name: e.target.value }))}
-                                    placeholder="E.g. PT Maju Jaya" 
+                                    placeholder="E.g. PT Maju Jaya"
                                     style={{
                                         width: '100%',
                                         padding: '12px 16px',
@@ -72,21 +84,23 @@ export default function Create() {
                                         backgroundColor: '#f8fafc',
                                         fontSize: '15px',
                                         outline: 'none',
+                                        boxSizing: 'border-box',
                                         transition: 'border-color 0.2s, box-shadow 0.2s',
                                     }}
                                     onFocus={e => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.1)'; }}
                                     onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                                    required
                                 />
                                 {errors.name && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.name}</p>}
                             </div>
 
                             <div style={{ marginBottom: '24px' }}>
                                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>No. Telepon</label>
-                                <input 
-                                    type="text" 
-                                    value={data.phone} 
+                                <input
+                                    type="text"
+                                    value={data.phone}
                                     onChange={e => setData(prev => ({ ...prev, phone: e.target.value }))}
-                                    placeholder="E.g. 08123456789" 
+                                    placeholder="E.g. 08123456789"
                                     style={{
                                         width: '100%',
                                         padding: '12px 16px',
@@ -95,6 +109,7 @@ export default function Create() {
                                         backgroundColor: '#f8fafc',
                                         fontSize: '15px',
                                         outline: 'none',
+                                        boxSizing: 'border-box',
                                     }}
                                 />
                                 {errors.phone && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.phone}</p>}
@@ -102,8 +117,8 @@ export default function Create() {
 
                             <div style={{ marginBottom: '32px' }}>
                                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Alamat</label>
-                                <textarea 
-                                    value={data.address} 
+                                <textarea
+                                    value={data.address}
                                     onChange={e => setData(prev => ({ ...prev, address: e.target.value }))}
                                     rows="3"
                                     placeholder="Alamat lengkap supplier..."
@@ -116,6 +131,7 @@ export default function Create() {
                                         fontSize: '15px',
                                         outline: 'none',
                                         resize: 'vertical',
+                                        boxSizing: 'border-box',
                                     }}
                                 ></textarea>
                                 {errors.address && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{errors.address}</p>}
@@ -138,8 +154,8 @@ export default function Create() {
                                     boxShadow: '0 10px 15px -3px rgba(14, 165, 233, 0.3)',
                                     transition: 'all 0.2s',
                                 }}
-                                onMouseEnter={e => { if(!processing) e.target.style.backgroundColor = '#0284c7'; }}
-                                onMouseLeave={e => { if(!processing) e.target.style.backgroundColor = '#0ea5e9'; }}
+                                onMouseEnter={e => { if (!processing) e.target.style.backgroundColor = '#0284c7'; }}
+                                onMouseLeave={e => { if (!processing) e.target.style.backgroundColor = '#0ea5e9'; }}
                             >
                                 {processing ? 'Menyimpan...' : 'Simpan Supplier'}
                             </button>
